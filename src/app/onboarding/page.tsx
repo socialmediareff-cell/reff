@@ -14,7 +14,9 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
     .from("profiles")
     .select("display_name, bio, pronouns, location, website, theme_color, interests")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
+
+  const selectedInterests = Array.isArray(profile?.interests) ? profile.interests : [];
 
   return (
     <main className="min-h-screen px-6 py-10">
@@ -39,7 +41,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           <div className="mt-3 flex flex-wrap gap-2">
             {interests.map((interest) => (
               <label key={interest} className="cursor-pointer rounded-full border border-white/10 px-3 py-2 text-sm has-[:checked]:border-violet-400 has-[:checked]:bg-violet-500/20">
-                <input className="sr-only" type="checkbox" name="interests" value={interest} defaultChecked={profile?.interests?.includes(interest)} />
+                <input className="sr-only" type="checkbox" name="interests" value={interest} defaultChecked={selectedInterests.includes(interest)} />
                 {interest}
               </label>
             ))}

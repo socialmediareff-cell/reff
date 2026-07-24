@@ -8,13 +8,18 @@ export default async function HomePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("username, display_name, bio, pronouns, location, website, theme_color, interests, onboarding_completed")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!profile?.onboarding_completed) redirect("/onboarding");
+  if (error) redirect(`/onboarding?error=${encodeURIComponent("Não foi possível carregar seu perfil.")}`);
+  if (!profile || !profile.onboarding_completed) redirect("/onboarding");
+
+  const themeColor = profile.theme_color || "#8b5cf6";
+  const interests = Array.isArray(profile.interests) ? profile.interests : [];
+  const displayName = profile.display_name || profile.username || "Usuário";
 
   return (
     <main className="min-h-screen px-6 py-8">
@@ -28,18 +33,18 @@ export default async function HomePage() {
         </header>
         <section className="mt-10 grid gap-6 lg:grid-cols-[300px_1fr]">
           <aside className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
-            <div className="h-24" style={{ backgroundColor: profile.theme_color }} />
+            <div className="h-24" style={{ backgroundColor: themeColor }} />
             <div className="p-6">
-              <div className="-mt-16 grid size-24 place-items-center rounded-full border-4 border-zinc-950 text-3xl font-black" style={{ backgroundColor: profile.theme_color }}>
-                {(profile.display_name || profile.username || "R")[0].toUpperCase()}
+              <div className="-mt-16 grid size-24 place-items-center rounded-full border-4 border-zinc-950 text-3xl font-black" style={{ backgroundColor: themeColor }}>
+                {displayName[0].toUpperCase()}
               </div>
-              <h1 className="mt-4 text-2xl font-bold">{profile.display_name || profile.username}</h1>
+              <h1 className="mt-4 text-2xl font-bold">{displayName}</h1>
               <p className="text-zinc-400">@{profile.username}{profile.pronouns ? ` · ${profile.pronouns}` : ""}</p>
               <p className="mt-4 text-sm leading-6 text-zinc-300">{profile.bio || "Sem biografia."}</p>
               {profile.location && <p className="mt-4 text-sm text-zinc-400">📍 {profile.location}</p>}
               {profile.website && <a href={profile.website} target="_blank" rel="noreferrer" className="mt-2 block truncate text-sm text-violet-300">{profile.website}</a>}
               <div className="mt-5 flex flex-wrap gap-2">
-                {profile.interests?.map((interest: string) => <span key={interest} className="rounded-full bg-white/10 px-3 py-1 text-xs text-zinc-300">{interest}</span>)}
+                {interests.map((interest: string) => <span key={interest} className="rounded-full bg-white/10 px-3 py-1 text-xs text-zinc-300">{interest}</span>)}
               </div>
             </div>
           </aside>
